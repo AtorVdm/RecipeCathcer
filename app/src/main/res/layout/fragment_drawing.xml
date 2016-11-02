@@ -1,0 +1,43 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.scaletools.recipecathcer.view.DrawingView
+        android:id="@+id/drawingView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"/>
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@color/colorBlack"
+        android:id="@+id/capturePicture"
+        android:scaleType="fitCenter"
+        android:visibility="invisible"/>
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/scanner_line"
+        android:id="@+id/scannerLine"
+        android:scaleType="centerCrop"
+        android:visibility="invisible" />
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/scanner_net"
+        android:id="@+id/scannerNet"
+        android:scaleType="fitCenter"
+        android:visibility="invisible"
+        android:alpha="0.2" />
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/resultBounds"
+        android:scaleType="fitCenter"
+        android:visibility="invisible" />
+
+</FrameLayout>

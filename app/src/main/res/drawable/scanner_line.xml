@@ -1,0 +1,11 @@
+<vector android:alpha="0.39" android:height="5dp"
+    android:viewportHeight="5" android:viewportWidth="300"
+    android:width="300dp" xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:name="scan_line">
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M0,0L600,0"
+            android:strokeColor="#00994d"
+            android:strokeWidth="5"/>
+    </group>
+</vector>
