@@ -5,8 +5,13 @@
     <com.scaletools.recipecathcer.view.DrawingView
         android:id="@+id/drawingView"
         android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <com.scaletools.recipecathcer.view.CropImageView
+        android:id="@+id/crop_panel"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="fitCenter"/>
+        android:layout_gravity="center" />
 
     <ImageView
         android:layout_width="match_parent"

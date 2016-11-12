@@ -91,18 +91,7 @@ public class DrawingFragment extends Fragment implements RequestQueue.RequestFin
         resultBounds = (ImageView) view.findViewById(R.id.resultBounds);
         drawingView = (DrawingView) view.findViewById(R.id.drawingView);
 
-        final BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length, options);
-
-        // Calculate inSampleSize
-        options.inSampleSize = calculateInSampleSize(options, view.getWidth(), view.getHeight());
-
-        // Decode bitmap with inSampleSize set
-        options.inJustDecodeBounds = false;
-        Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length, options);
-
-        drawingView.setBitmap(bitmap);
+        drawingView.setBitmapBytes(imageBytes);
     }
 
     public void processImage() {

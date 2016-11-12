@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.scaletools.recipecathcer"
-        minSdkVersion 15
+        minSdkVersion 16
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
@@ -25,5 +25,6 @@ dependencies {
     compile 'com.android.support:design:23.4.0'
     compile 'com.android.volley:volley:1.0.0'
     compile 'com.android.support:support-v4:23.4.0'
+    compile 'it.sephiroth.android.library.imagezoom:imagezoom:+'
     testCompile 'junit:junit:4.12'
 }

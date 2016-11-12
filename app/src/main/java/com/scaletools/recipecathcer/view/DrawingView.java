@@ -2,6 +2,7 @@ package com.scaletools.recipecathcer.view;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.DashPathEffect;
@@ -13,15 +14,16 @@ import android.graphics.drawable.BitmapDrawable;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.ViewTreeObserver;
 import android.widget.ImageView;
+
+import it.sephiroth.android.library.imagezoom.ImageViewTouch;
 
 /**
  * Created by Ator on 20/10/16.
  */
 
-public class DrawingView extends ImageView {
-    public int width;
-    public int height;
+public class DrawingView extends ImageViewTouch {
     private Bitmap mBitmap;
     private Canvas mCanvas;
     private Path mPath;
@@ -36,11 +38,8 @@ public class DrawingView extends ImageView {
 
     private State state;
     private RectF selectedRect;
-
-    public DrawingView(Context context) {
-        super(context);
-        init(context);
-    }
+    private byte[] imageBytes;
+    private RectF imageBounds;
 
     public DrawingView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -68,7 +67,7 @@ public class DrawingView extends ImageView {
         mPaint = new Paint();
         mPaint.setAntiAlias(true);
         mPaint.setDither(true);
-        mPaint.setColor(Color.BLACK);
+        mPaint.setColor(Color.GRAY);
         mPaint.setStyle(Paint.Style.STROKE);
         mPaint.setStrokeJoin(Paint.Join.ROUND);
         mPaint.setStrokeCap(Paint.Cap.ROUND);
@@ -83,22 +82,56 @@ public class DrawingView extends ImageView {
         mTextPaint = new TextPaint();
         mTextPaint.setColor(Color.BLACK);
         mTextPaint.setTextSize(30);
+
+        imageBounds = new RectF();
     }
 
-    public void setBitmap(Bitmap bitmap) {
-        //setImageDrawable(new BitmapDrawable(getResources(), bitmap));
-        mBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
-        setImageDrawable(new BitmapDrawable(context.getResources(), mBitmap));
-        mCanvas = new Canvas(mBitmap);
-        selectedRect = null;
+    public void setBitmapBytes(byte[] bytes) {
+        this.imageBytes = bytes;
     }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        //mBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-        //mCanvas = new Canvas(mBitmap);
+        final int width = w;
+        final int height = h;
+        new Runnable() {
+            @Override
+            public void run() {
+                if (imageBytes == null) return;
+
+                mBitmap = decodeSampledBitmapFromByteArray(imageBytes, width, height);
+                imageBytes = null;
+
+                mCanvas = new Canvas(mBitmap);
+                //mCanvas.drawBitmap(mBitmap, 0, 0, new Paint());
+                setImageBitmap(mBitmap);
+                selectedRect = null;
+                imageBytes = null;
+
+                float[] f = new float[9];
+                getImageMatrix().getValues(f);
+
+                // Extract the scale values using the constants (if aspect ratio maintained, scaleX == scaleY)
+                final float scaleX = f[Matrix.MSCALE_X];
+                final float scaleY = f[Matrix.MSCALE_Y];
+
+                final int actW = Math.round(mBitmap.getWidth() * scaleX);
+                final int actH = Math.round(mBitmap.getHeight() * scaleY);
+
+                int top = (height - actH)/2;
+                int left = (width - actW)/2;
+
+                imageBounds = new RectF(left, top, left + actW, top + actH);
+            }
+        }.run();
     }
+
+    public void setBitmap(Bitmap bitmap) {
+        //setImageDrawable(new BitmapDrawable(getResources(), bitmap));
+        mBitmap = bitmap;
+    }
+
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -142,20 +175,7 @@ public class DrawingView extends ImageView {
     private void touch_up_drawing() {
         mPath.lineTo(mX, mY);
         circlePath.reset();
-        // transform path variable to fit the bitmap
-        Matrix scaleMatrix = new Matrix();
-        float scaleWidth = (float)mBitmap.getWidth()/getWidth();
-        float scaleHeight = (float)mBitmap.getHeight()/getHeight();
-        scaleMatrix.setScale(scaleWidth, scaleHeight, 1, 1);
-        RectF rectF = new RectF();
-        mPath.computeBounds(rectF, true);
-        mPath.transform(scaleMatrix);
-        // commit the path to our offscreen
-        float strokeWidth = mPaint.getStrokeWidth();
-        float scaledStrokeWidth = strokeWidth * (scaleWidth + scaleHeight)/2;
-        mPaint.setStrokeWidth(scaledStrokeWidth);
         mCanvas.drawPath(mPath,  mPaint);
-        mPaint.setStrokeWidth(strokeWidth);
         // kill this so we don't double draw
         mPath.reset();
     }
@@ -163,10 +183,13 @@ public class DrawingView extends ImageView {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (state == State.VIEW) {
-            // do nothing
+            super.onTouchEvent(event);
         } else if (state == State.EDIT) {
             float x = event.getX();
             float y = event.getY();
+            if (x < imageBounds.left || x > imageBounds.right ||
+                    y < imageBounds.top || y > imageBounds.bottom)
+                return true;
 
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
@@ -228,6 +251,44 @@ public class DrawingView extends ImageView {
         selectedRect = new RectF(Math.min(mStartX, mEndX), Math.min(mStartY, mEndY),
                     Math.max(mEndX, mStartX), Math.max(mEndY, mStartY));
         mDrawRect = false;
+    }
+
+    private Bitmap decodeSampledBitmapFromByteArray(byte[] imageBytes, int reqWidth, int reqHeight) {
+        // First decode with inJustDecodeBounds=true to check dimensions
+        final BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length, options);
+
+        // Calculate inSampleSize
+        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
+
+        // Decode bitmap with inSampleSize set
+        options.inJustDecodeBounds = false;
+        options.inMutable = true;
+
+        return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length, options);
+    }
+
+    private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+        // Raw height and width of image
+        final int height = options.outHeight;
+        final int width = options.outWidth;
+        int inSampleSize = 1;
+
+        if (height > reqHeight || width > reqWidth) {
+
+            final int halfHeight = height / 2;
+            final int halfWidth = width / 2;
+
+            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+            // height and width larger than the requested height and width.
+            while ((halfHeight / inSampleSize) >= reqHeight
+                    || (halfWidth / inSampleSize) >= reqWidth) {
+                inSampleSize *= 2;
+            }
+        }
+
+        return inSampleSize;
     }
 
     public State getState() {
