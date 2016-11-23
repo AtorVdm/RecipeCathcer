@@ -1,25 +1,25 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <com.scaletools.recipecathcer.view.DrawingView
-        android:id="@+id/drawingView"
+    <it.sephiroth.android.library.imagezoom.ImageViewTouch
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:id="@+id/recipeImage"
+        android:background="@color/colorBlack"
+        android:scaleType="fitCenter" />
+
+    <com.scaletools.recipecathcer.view.DrawingView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/drawingView"
+        android:visibility="invisible" />
 
     <com.scaletools.recipecathcer.view.CropImageView
-        android:id="@+id/crop_panel"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_gravity="center" />
-
-    <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:src="@color/colorBlack"
-        android:id="@+id/capturePicture"
-        android:scaleType="fitCenter"
-        android:visibility="invisible"/>
+        android:id="@+id/cropImageView"
+        android:visibility="invisible" />
 
     <ImageView
         android:layout_width="match_parent"
@@ -45,4 +45,4 @@
         android:scaleType="fitCenter"
         android:visibility="invisible" />
 
-</FrameLayout>
+</RelativeLayout>

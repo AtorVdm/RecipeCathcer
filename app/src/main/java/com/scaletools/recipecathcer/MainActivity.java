@@ -77,8 +77,9 @@ public class MainActivity extends AppCompatActivity implements RequestQueue.Requ
     }
 
     public void clickImageApprove(View v) {
-        scanMode();
-        drawingFragment.processImage();
+        if (drawingFragment.processImage()) {
+            scanMode();
+        }
     }
 
     public void clickImageDismiss(View v) {

@@ -5,9 +5,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
@@ -25,12 +27,15 @@ import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.scaletools.recipecathcer.network.RequestProcessor;
+import com.scaletools.recipecathcer.view.CropImageView;
 import com.scaletools.recipecathcer.view.DrawingView;
 
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
+
+import it.sephiroth.android.library.imagezoom.ImageViewTouch;
 
 
 /**
@@ -48,8 +53,10 @@ public class DrawingFragment extends Fragment implements RequestQueue.RequestFin
     private ImageView scannerNet;
     private ImageView resultBounds;
     private DrawingView drawingView;
+    private ImageViewTouch imageView;
+    private CropImageView cropImageView;
 
-    private byte[] imageBytes;
+    private Bitmap imageBitmap;
 
     public DrawingFragment() {}
 
@@ -71,16 +78,12 @@ public class DrawingFragment extends Fragment implements RequestQueue.RequestFin
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            imageBytes = getArguments().getByteArray(ARG_IMAGE);
-        }
         requestProcessor = new RequestProcessor();
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_drawing, container, false);
     }
 
@@ -90,27 +93,43 @@ public class DrawingFragment extends Fragment implements RequestQueue.RequestFin
         scannerNet = (ImageView) view.findViewById(R.id.scannerNet);
         resultBounds = (ImageView) view.findViewById(R.id.resultBounds);
         drawingView = (DrawingView) view.findViewById(R.id.drawingView);
+        imageView = (ImageViewTouch) view.findViewById(R.id.recipeImage);
+        cropImageView = (CropImageView) view.findViewById(R.id.cropImageView);
 
-        drawingView.setBitmapBytes(imageBytes);
+        byte[] imageBytes;
+        if (getArguments() != null) {
+            imageBytes = getArguments().getByteArray(ARG_IMAGE);
+        } else {
+            return;
+        }
+
+        final BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inMutable = true;
+        imageBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length, options);
+        options.inSampleSize = 2;
+        Bitmap displayImageBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length, options);
+        imageView.setImageDrawable(new BitmapDrawable(context.getResources(), displayImageBitmap));
     }
 
-    public void processImage() {
+    public boolean processImage() {
         Animation animScan = AnimationUtils.loadAnimation(context, R.anim.scanning);
         scannerLine.startAnimation(animScan);
         Animation animNet = AnimationUtils.loadAnimation(context, R.anim.scanning_net);
         scannerNet.startAnimation(animNet);
 
-        Bitmap bitmap = drawingView.getImageBitmap();
+        Bitmap bitmap = imageBitmap;
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 80, stream);
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, stream);
         byte[] byteArray = stream.toByteArray();
 
         if (byteArray.length > 1024*1024) {
             Toast.makeText(context, "ERROR: Image is too big: " + byteArray.length, Toast.LENGTH_SHORT).show();
+            return false;
         } else {
             Log.e("INFO", "Image size: " + byteArray.length);
             requestProcessor.sendImageForRecognition(context, byteArray, this);
+            return true;
         }
     }
 
@@ -129,7 +148,7 @@ public class DrawingFragment extends Fragment implements RequestQueue.RequestFin
             // Calculate the largest inSampleSize value that is a power of 2 and keeps both
             // height and width larger than the requested height and width.
             while ((halfHeight / inSampleSize) >= reqHeight
-                    && (halfWidth / inSampleSize) >= reqWidth) {
+                    || (halfWidth / inSampleSize) >= reqWidth) {
                 inSampleSize *= 2;
             }
         }
@@ -210,18 +229,80 @@ public class DrawingFragment extends Fragment implements RequestQueue.RequestFin
     }
 
     public void setState(DrawingView.State state) {
+        if (state == DrawingView.State.VIEW &&
+                (drawingView.getState() == DrawingView.State.EDIT)) {
+            approveDrawing();
+        }
+        if (state == DrawingView.State.EDIT) {
+            imageView.zoomTo(1, 250);
+            drawingView.setVisibility(View.VISIBLE);
+        } else {
+            drawingView.setVisibility(View.INVISIBLE);
+        }
+        if (state == DrawingView.State.SELECT) {
+            cropImageView.setRatioCropRect(imageView.getBitmapRect(), -1f);
+            cropImageView.setVisibility(View.VISIBLE);
+        } else {
+            cropImageView.setVisibility(View.INVISIBLE);
+        }
         drawingView.setState(state);
     }
 
+    public void approveDrawing() {
+        Bitmap bitmapDrawing = drawingView.getImageBitmap();
+
+        Rect recipeImageRect = new Rect();
+        imageView.getBitmapRect().round(recipeImageRect);
+        Bitmap croppedBitmapDrawing = Bitmap.createBitmap(bitmapDrawing,
+                recipeImageRect.left, recipeImageRect.top,
+                recipeImageRect.right - recipeImageRect.left,
+                recipeImageRect.bottom - recipeImageRect.top);
+        Bitmap scaledBitmapDrawing = Bitmap.createScaledBitmap(croppedBitmapDrawing,
+                imageBitmap.getWidth(), imageBitmap.getHeight(), true);
+
+        croppedBitmapDrawing.recycle();
+
+        Canvas canvas = new Canvas(imageBitmap);
+        canvas.drawBitmap(scaledBitmapDrawing, new Matrix(), new Paint());
+
+        scaledBitmapDrawing.recycle();
+
+        imageView.setImageDrawable(new BitmapDrawable(context.getResources(), imageBitmap));
+    }
+
     public void cutSelectedArea() {
-        RectF rect = drawingView.getScaledSelectedRect();
-        if (rect != null) {
-            Bitmap currentBitmap = drawingView.getImageBitmap();
-            Bitmap newBitmap = Bitmap.createBitmap(currentBitmap,
-                    (int)rect.left, (int)rect.top,
-                    (int)(rect.right - rect.left),
-                    (int)(rect.bottom - rect.top), null, false);
-            drawingView.setBitmap(newBitmap);
+        // a rect cropped by user in screen coordinates
+        Rect cutImageArea = new Rect();
+        cropImageView.getCropRect().round(cutImageArea);
+        // a rect that represents image position on a screen
+        Rect recipeImageRect = new Rect();
+        imageView.getBitmapRect().round(recipeImageRect);
+        if (!cutImageArea.isEmpty()) {
+            // a rect cropped by user in image coordinates (not scaled to the image size)
+            Rect actualCutImageArea = new Rect(cutImageArea.left - recipeImageRect.left,
+                    cutImageArea.top - recipeImageRect.top,
+                    cutImageArea.right - recipeImageRect.left,
+                    cutImageArea.bottom - recipeImageRect.top);
+
+            // get the scale factors for both vertical and horizontal since we're dealing with a square inside of a rectangle
+            float scalefactorH = (float)imageBitmap.getWidth() / (float)(recipeImageRect.right - recipeImageRect.left);
+            float scalefactorV = (float)imageBitmap.getHeight() / (float)(recipeImageRect.bottom - recipeImageRect.top);
+
+            // create a matrix and apply the scale factors
+            Matrix m = new Matrix();
+            m.postScale(scalefactorH, scalefactorV);
+
+            // apply the matrix to a RectF
+            RectF scaledActualCutImageArea = new RectF(actualCutImageArea);
+            m.mapRect(scaledActualCutImageArea);
+
+            Bitmap croppedBitmapDrawing = Bitmap.createBitmap(imageBitmap,
+                    (int)scaledActualCutImageArea.left, (int)scaledActualCutImageArea.top,
+                    (int)(scaledActualCutImageArea.right - scaledActualCutImageArea.left),
+                    (int)(scaledActualCutImageArea.bottom - scaledActualCutImageArea.top));
+
+            imageBitmap = croppedBitmapDrawing;
+            imageView.setImageDrawable(new BitmapDrawable(context.getResources(), imageBitmap));
         }
     }
 

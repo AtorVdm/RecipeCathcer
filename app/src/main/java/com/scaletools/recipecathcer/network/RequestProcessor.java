@@ -34,7 +34,7 @@ import java.util.Map;
 
 public class RequestProcessor {
     private static final String TAG = "RequestProcessor";
-    private static final String URL = "http://192.168.0.104/RecipeParser/api/recipe/";
+    private static final String URL = "http://192.168.0.103/RecipeParser/api/recipe/";
     private static final String URL_OCR = URL + "ocr";
     private static final String URL_PARSE = URL + "parse";
 
