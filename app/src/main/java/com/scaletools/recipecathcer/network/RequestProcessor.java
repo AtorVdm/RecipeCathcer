@@ -6,17 +6,18 @@ import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.android.volley.AuthFailureError;
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.NetworkResponse;
 import com.android.volley.NoConnectionError;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
+import com.android.volley.RetryPolicy;
 import com.android.volley.TimeoutError;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
-import com.scaletools.recipecathcer.volley.*;
+import com.scaletools.recipecathcer.network.volley.VolleyMultipartRequest;
+import com.scaletools.recipecathcer.network.volley.VolleySingleton;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -35,40 +36,20 @@ import java.util.Map;
 public class RequestProcessor {
     private static final String TAG = "RequestProcessor";
     private static final String URL = "http://192.168.0.103/RecipeParser/api/recipe/";
-    private static final String URL_OCR = URL + "ocr";
-    private static final String URL_PARSE = URL + "parse";
+    public static final String OCR = "ocr";
+    public static final String PARSE = "parse";
+    private static final int REQUEST_TIMEOUT = 5000;
+    private static final int REQUEST_RETRIES = 4;
 
     private List<Rect> responseBounds;
     private JSONObject jsonResult;
     private JSONObject jsonRecipe;
 
-    public void requestImageTextHighlights(final Context context, byte[] imageBytes) {
-        // Instantiate the RequestQueue.
-        RequestQueue queue = Volley.newRequestQueue(context);
-        Log.d(TAG, "Clicked...");
+    public void sendImageForRecognition(Context context, final byte[] imageBytes,
+                                        @Nullable RequestQueue.RequestFinishedListener<NetworkResponse> listener) {
 
-// Request a string response from the provided URL.
-
-        StringRequest stringRequest = new StringRequest(Request.Method.POST, URL_OCR,
-                new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        // Display the first 500 characters of the response string.
-                        Log.d(TAG, "Response is: " + response.substring(0,500));
-                    }
-                }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.d(TAG, "Error is: " + error.getLocalizedMessage());
-            }
-        });
-
-// Add the request to the RequestQueue.
-        queue.add(stringRequest);
-    }
-
-    public void sendImageForRecognition(Context context, final byte[] imageBytes, @Nullable RequestQueue.RequestFinishedListener<NetworkResponse> listener) {
-        final VolleyMultipartRequest multipartRequest = new VolleyMultipartRequest(Request.Method.POST, URL_OCR, new Response.Listener<NetworkResponse>() {
+        final VolleyMultipartRequest multipartRequest = new VolleyMultipartRequest
+                (Request.Method.POST, URL + OCR, new Response.Listener<NetworkResponse>() {
             @Override
             public void onResponse(NetworkResponse response) {
                 List<Rect> rectangles = new ArrayList<>();
@@ -118,7 +99,7 @@ public class RequestProcessor {
                 Map<String, DataPart> params = new HashMap<>();
                 // file name could found file base or direct access from real path
                 // for now just get bitmap data from ImageView
-                params.put("data", new DataPart("test.jpg", imageBytes, "image/jpeg"));
+                params.put("data", new DataPart("image.jpg", imageBytes, "image/jpeg"));
                 return params;
             }
         };
@@ -126,18 +107,28 @@ public class RequestProcessor {
         if (listener != null) {
             VolleySingleton.getInstance(context).getRequestQueue().addRequestFinishedListener(listener);
         }
+        multipartRequest.setRetryPolicy(retryPolicy());
+        multipartRequest.setTag(OCR);
 
         VolleySingleton.getInstance(context).addToRequestQueue(multipartRequest);
+    }
+
+    private RetryPolicy retryPolicy() {
+        return new DefaultRetryPolicy(REQUEST_TIMEOUT,
+                REQUEST_RETRIES,
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT);
     }
 
     public List<Rect> getResponseBounds() {
         return responseBounds;
     }
 
-    public boolean sendJsonForParsing(Context context, @Nullable RequestQueue.RequestFinishedListener<NetworkResponse> listener) {
+    public boolean sendJsonForParsing(Context context,
+                                      @Nullable RequestQueue.RequestFinishedListener<NetworkResponse> listener) {
         if (jsonResult == null) return false;
 
-        final StringRequest stringRequest = new StringRequest(Request.Method.POST, URL_PARSE, new Response.Listener<String>() {
+        final StringRequest stringRequest = new StringRequest
+                (Request.Method.POST, URL + PARSE, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
                 try {
@@ -173,6 +164,8 @@ public class RequestProcessor {
         if (listener != null) {
             VolleySingleton.getInstance(context).getRequestQueue().addRequestFinishedListener(listener);
         }
+        stringRequest.setRetryPolicy(retryPolicy());
+        stringRequest.setTag(PARSE);
 
         VolleySingleton.getInstance(context).addToRequestQueue(stringRequest);
         return true;
@@ -217,5 +210,4 @@ public class RequestProcessor {
         Log.i("Error", errorMessage);
         error.printStackTrace();
     }
-
 }

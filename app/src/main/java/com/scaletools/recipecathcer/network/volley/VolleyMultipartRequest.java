@@ -1,4 +1,4 @@
-package com.scaletools.recipecathcer.volley;
+package com.scaletools.recipecathcer.network.volley;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.NetworkResponse;

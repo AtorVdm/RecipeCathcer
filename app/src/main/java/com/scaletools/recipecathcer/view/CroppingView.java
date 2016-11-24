@@ -16,27 +16,29 @@ import com.scaletools.recipecathcer.util.DrawingInitUtils;
  * Created by Ator on 20/10/16.
  */
 
-public class DrawingView extends ImageView {
+public class CroppingView extends ImageView {
     private Bitmap mBitmap;
     private Canvas mCanvas;
     private Path mPath;
     private Paint mPaint;
+    private Context context;
     private Paint circlePaint;
     private Path circlePath;
 
     private State state;
 
-    public DrawingView(Context context, AttributeSet attrs) {
+    public CroppingView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        init();
+        init(context);
     }
 
-    public DrawingView(Context context, AttributeSet attrs, int defStyle) {
+    public CroppingView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        init();
+        init(context);
     }
 
-    private void init() {
+    private void init(Context context) {
+        this.context = context;
         state = State.VIEW;
 
         mPath = new Path();
@@ -127,6 +129,44 @@ public class DrawingView extends ImageView {
             invalidate();
         }
         return true;
+    }
+
+    private Bitmap decodeSampledBitmapFromByteArray(byte[] imageBytes, int reqWidth, int reqHeight) {
+        // First decode with inJustDecodeBounds=true to check dimensions
+        final BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length, options);
+
+        // Calculate inSampleSize
+        options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
+
+        // Decode bitmap with inSampleSize set
+        options.inJustDecodeBounds = false;
+        options.inMutable = true;
+
+        return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length, options);
+    }
+
+    private int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+        // Raw height and width of image
+        final int height = options.outHeight;
+        final int width = options.outWidth;
+        int inSampleSize = 1;
+
+        if (height > reqHeight || width > reqWidth) {
+
+            final int halfHeight = height / 2;
+            final int halfWidth = width / 2;
+
+            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+            // height and width larger than the requested height and width.
+            while ((halfHeight / inSampleSize) >= reqHeight
+                    || (halfWidth / inSampleSize) >= reqWidth) {
+                inSampleSize *= 2;
+            }
+        }
+
+        return inSampleSize;
     }
 
     public State getState() {

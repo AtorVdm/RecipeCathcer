@@ -1,12 +1,10 @@
 package com.scaletools.recipecathcer;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
-import android.media.Image;
-import android.os.Build;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.util.AttributeSet;
@@ -16,55 +14,48 @@ import android.widget.Toast;
 import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
+import com.scaletools.recipecathcer.fragment.ChoosingFragment;
+import com.scaletools.recipecathcer.fragment.DrawingFragment;
+import com.scaletools.recipecathcer.fragment.ResultFragment;
+import com.scaletools.recipecathcer.helper.ImageCatcher;
+import com.scaletools.recipecathcer.network.RequestProcessor;
 import com.scaletools.recipecathcer.view.DrawingView;
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-public class MainActivity extends AppCompatActivity implements RequestQueue.RequestFinishedListener<NetworkResponse> {
-    private static final int PICK_IMAGE = 0;
+public class MainActivity extends AppCompatActivity implements RequestQueue.RequestFinishedListener<NetworkResponse>, ImageCatcher {
     List<FloatingActionButton> fabList = new ArrayList<>();
-    private FloatingActionButton fabCapture;
     private FloatingActionButton fabGood;
     private FloatingActionButton fabDismiss;
     private FloatingActionButton fabBrush;
     private FloatingActionButton fabSelect;
     private FloatingActionButton fabContinue;
     private FloatingActionButton fabBack;
-    private FloatingActionButton fabUpload;
 
-    private CameraFragment cameraFragment;
+    private ChoosingFragment choosingFragment;
     private DrawingFragment drawingFragment;
     private ResultFragment resultFragment;
 
+    //region @Override
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        cameraFragment = CameraFragment.newInstance();
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.activityFragment, cameraFragment);
-        transaction.commit();
-
-        fabCapture = (FloatingActionButton) findViewById(R.id.fabCapture);
         fabGood = (FloatingActionButton) findViewById(R.id.fabGood);
         fabDismiss = (FloatingActionButton) findViewById(R.id.fabDismiss);
         fabBrush = (FloatingActionButton) findViewById(R.id.fabBrush);
         fabSelect = (FloatingActionButton) findViewById(R.id.fabSelect);
         fabContinue = (FloatingActionButton) findViewById(R.id.fabContinue);
         fabBack = (FloatingActionButton) findViewById(R.id.fabBack);
-        fabUpload = (FloatingActionButton) findViewById(R.id.fabUpload);
-        fabList = Arrays.asList(fabCapture, fabGood, fabDismiss, fabBrush,
-                fabSelect, fabContinue, fabBack, fabUpload);
+        fabList = Arrays.asList(fabGood, fabDismiss, fabBrush,
+                fabSelect, fabContinue, fabBack);
 
-        captureMode();
+        showChoosingFragment();
     }
 
     @Override
@@ -72,10 +63,26 @@ public class MainActivity extends AppCompatActivity implements RequestQueue.Requ
         return super.onCreateView(name, context, attrs);
     }
 
-    public void clickImageCapture(View v) {
-        cameraFragment.takePicture();
+    @Override
+    public void onRequestFinished(Request<NetworkResponse> request) {
+        if (!request.getTag().equals(RequestProcessor.PARSE)) return;
+        resultFragment = ResultFragment.newInstance();
+
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.activityFragment, resultFragment);
+        transaction.commit();
+
+        resultFragment.showResult(drawingFragment.getJsonRecipe());
+        displayButtons();
     }
 
+    @Override
+    public void catchImage(Bitmap bitmap) {
+        showDrawingFragment(bitmap);
+    }
+    //endregion
+
+    //region onClick
     public void clickImageApprove(View v) {
         if (drawingFragment.processImage()) {
             scanMode();
@@ -84,10 +91,9 @@ public class MainActivity extends AppCompatActivity implements RequestQueue.Requ
 
     public void clickImageDismiss(View v) {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.activityFragment, cameraFragment);
+        transaction.replace(R.id.activityFragment, choosingFragment);
         transaction.commit();
-        captureMode();
-        cameraFragment.openCamera();
+        choosingMode();
     }
 
     public void clickImageBrush(View v) {
@@ -135,98 +141,20 @@ public class MainActivity extends AppCompatActivity implements RequestQueue.Requ
     }
 
     public void clickImageBack(View v) {
+        drawingFragment.cancelOcrResult();
         decisionMode();
     }
+    //endregion
 
-    public void clickImageUpload(View v) {
-        Intent getIntent = new Intent(Intent.ACTION_GET_CONTENT);
-        getIntent.setType("image/*");
 
-        Intent pickIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        pickIntent.setType("image/*");
-
-        Intent chooserIntent = Intent.createChooser(getIntent, "Select Image");
-        chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, new Intent[] {pickIntent});
-
-        startActivityForResult(chooserIntent, PICK_IMAGE);
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        try {
-            if (requestCode == PICK_IMAGE && resultCode == Activity.RESULT_OK) {
-                if (data == null) {
-                    //Display an error
-                    return;
-                }
-                InputStream inputStream = getContentResolver().openInputStream(data.getData());
-
-                byte[] bytes = readBytes(inputStream);
-                openDrawingFragment(bytes);
-            }
-        } catch (FileNotFoundException ex) {
-            Toast.makeText(this, "Image was not found.", Toast.LENGTH_SHORT).show();
-        } catch (IOException e) {
-            Toast.makeText(this, "Cannot read this image.", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    public void imageCaptured(Image image) {
-        ByteBuffer buffer = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
-            buffer = image.getPlanes()[0].getBuffer();
-        }
-        byte[] bytes = new byte[buffer.remaining()];
-        buffer.get(bytes);
-
-        openDrawingFragment(bytes);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            image.close();
-        }
-    }
-
-    private void openDrawingFragment(byte[] imageBytes) {
-        drawingFragment = DrawingFragment.newInstance(imageBytes);
-
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.activityFragment, drawingFragment);
-        transaction.commit();
-
-        decisionMode();
-    }
-
-    private byte[] readBytes(InputStream inputStream) throws IOException {
-        // this dynamically extends to take the bytes you read
-        ByteArrayOutputStream byteBuffer = new ByteArrayOutputStream();
-
-        // this is storage overwritten on each iteration with bytes
-        int bufferSize = 1024;
-        byte[] buffer = new byte[bufferSize];
-
-        // we need to know how may bytes were read to write them to the byteBuffer
-        int len = 0;
-        while ((len = inputStream.read(buffer)) != -1) {
-            byteBuffer.write(buffer, 0, len);
-        }
-
-        // and then we can return your byte array.
-        return byteBuffer.toByteArray();
-    }
-
-    public void showRequestSuccessButtons() {
-        fabContinue.setImageResource(R.drawable.ic_continue);
+    //region Modes
+    public void showRequestButtons(boolean success) {
+        fabContinue.setImageResource(success? R.drawable.ic_continue: R.drawable.ic_try_again);
         displayButtons(fabContinue, fabBack);
     }
 
-    public void showRequestFailButtons() {
-        fabContinue.setImageResource(R.drawable.ic_try_again);
-        displayButtons(fabContinue, fabBack);
-    }
-
-    private void captureMode() {
-        displayButtons(fabCapture, fabUpload);
+    private void choosingMode() {
+        displayButtons();
     }
 
     private void decisionMode() {
@@ -246,26 +174,37 @@ public class MainActivity extends AppCompatActivity implements RequestQueue.Requ
     }
 
     private void displayButtons(FloatingActionButton... fabs) {
-        List<FloatingActionButton> fabListTemp = new ArrayList<>(fabList);
+        Set<FloatingActionButton> fabSet = new HashSet<>(fabList);
         for (FloatingActionButton fab : fabs) {
             fab.show();
-            fabListTemp.remove(fab);
+            fabSet.remove(fab);
         }
-        for (FloatingActionButton fab : fabListTemp) {
+        for (FloatingActionButton fab : fabSet) {
             fab.hide();
         }
     }
+    //endregion
 
-    @Override
-    public void onRequestFinished(Request<NetworkResponse> request) {
-        if (!request.getUrl().endsWith("parse")) return;
-        resultFragment = ResultFragment.newInstance();
 
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.activityFragment, resultFragment);
-        transaction.commit();
+    //region Fragment
+    private void showChoosingFragment() {
+        choosingFragment = ChoosingFragment.newInstance(this);
+        replaceFragment(choosingFragment);
 
-        resultFragment.showResult(drawingFragment.getJsonRecipe());
-        displayButtons();
+        choosingMode();
     }
+
+    private void showDrawingFragment(Bitmap bitmap) {
+        drawingFragment = DrawingFragment.newInstance(bitmap);
+        replaceFragment(drawingFragment);
+
+        decisionMode();
+    }
+
+    private void replaceFragment(Fragment fragment) {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.activityFragment, fragment);
+        transaction.commit();
+    }
+    //endregion
 }

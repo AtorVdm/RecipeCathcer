@@ -1,4 +1,4 @@
-package com.scaletools.recipecathcer.volley;
+package com.scaletools.recipecathcer.network.volley;
 
 import android.content.Context;
 import android.graphics.Bitmap;

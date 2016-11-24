@@ -39,7 +39,7 @@
         android:layout_gravity="bottom|center"
         android:layout_margin="@dimen/fab_margin"
         android:src="@drawable/ic_camera"
-        android:onClick="clickImageCapture"
+        android:onClick="clickImageChoose"
         android:visibility="invisible" />
 
     <android.support.design.widget.FloatingActionButton
