@@ -272,13 +272,14 @@ public class ChoosingFragment extends Fragment {
                             if (bitmap.getWidth() > maxSize || bitmap.getHeight() > maxSize)
                             {
                                 float scaleFactor = Math.max(bitmap.getWidth() / (float) maxSize, bitmap.getHeight() / (float) maxSize);
-                                Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, Math.round(bitmap.getWidth() / scaleFactor), Math.round(bitmap.getHeight() / scaleFactor), true);
-                                mImageFile.createNewFile();
-                                FileOutputStream fos = new FileOutputStream(mImageFile);
-                                scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 95, fos);
-                                fos.close();
-                                Log.d(TAG, String.format("File 2 length: %d Width: %d Height: %d", mImageFile.length(), scaledBitmap.getWidth(), scaledBitmap.getHeight()));
+                                bitmap = Bitmap.createScaledBitmap(bitmap, Math.round(bitmap.getWidth() / scaleFactor), Math.round(bitmap.getHeight() / scaleFactor), true);
                             }
+                            mImageFile.createNewFile();
+                            FileOutputStream fos = new FileOutputStream(mImageFile);
+                            bitmap.compress(Bitmap.CompressFormat.JPEG, 95, fos);
+                            fos.close();
+                            Log.d(TAG, String.format("File 2 length: %d Width: %d Height: %d", mImageFile.length(), bitmap.getWidth(), bitmap.getHeight()));
+
                         }
                     }
                     catch(Exception e)
@@ -301,7 +302,7 @@ public class ChoosingFragment extends Fragment {
                     } else {
                         final BitmapFactory.Options options = new BitmapFactory.Options();
                         options.inMutable = true;
-                        Bitmap bitmap = BitmapFactory.decodeFile(mImageFile.getPath(), options);
+                        Bitmap bitmap = BitmapFactory.decodeFile(mImageFile.getAbsolutePath(), options);
                         imageCatcher.catchImage(bitmap);
                     }
                 }

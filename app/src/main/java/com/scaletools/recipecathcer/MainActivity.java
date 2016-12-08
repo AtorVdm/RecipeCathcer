@@ -90,6 +90,7 @@ public class MainActivity extends AppCompatActivity
             if (request.getTag().equals(RequestProcessor.OCR)) {
                 drawingFragment.showWordBounds(true);
             } else if (request.getTag().equals(RequestProcessor.PARSE)) {
+                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
                 showResultFragment(drawingFragment.getJsonRecipe());
             }
 
@@ -238,6 +239,7 @@ public class MainActivity extends AppCompatActivity
     public void clickImageContinue(View v) {
         if (!drawingFragment.sendJsonForParsing(this)) {
             drawingFragment.processImage(this);
+            scanMode();
         }
     }
 

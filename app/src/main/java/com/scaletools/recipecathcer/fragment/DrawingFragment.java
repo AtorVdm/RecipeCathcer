@@ -223,6 +223,11 @@ public class DrawingFragment extends Fragment {
                 resultBounds.setVisibility(View.VISIBLE);
                 resultBounds.startAnimation(animAppear);
 
+                if (getActivity() instanceof MainActivity) {
+                    MainActivity mainActivity = (MainActivity) getActivity();
+                    mainActivity.showRequestButtons(success);
+                }
+
                 final Handler handler = new Handler();
                 handler.postDelayed(new Runnable() {
                     @Override
@@ -231,10 +236,6 @@ public class DrawingFragment extends Fragment {
                         scannerNet.clearAnimation();
                         resultBounds.clearAnimation();
 
-                        if (getActivity() instanceof MainActivity) {
-                            MainActivity mainActivity = (MainActivity) getActivity();
-                            mainActivity.showRequestButtons(success);
-                        }
                         getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
                     }
                 }, DELAY_MILLIS);
@@ -301,6 +302,7 @@ public class DrawingFragment extends Fragment {
     }
 
     public boolean sendJsonForParsing(@Nullable RequestQueue.RequestFinishedListener<NetworkResponse> listener) {
+        getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
         return requestProcessor.sendJsonForParsing(context, listener);
     }
 
