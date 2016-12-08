@@ -16,6 +16,7 @@ import android.os.Environment;
 import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
@@ -35,9 +36,17 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
+/**
+ * This fragment was constructed from a code example
+ * "code for showing a picture/camera selector that is used in our Android app"
+ * WARNING!!! Should be replaced with a proper fragment
+ */
 public class ChoosingFragment extends Fragment {
+    //region ChoosingFragment from email
     private static final int SELECT_PICTURE_REQUEST = 10;
+    private static final int CAMERA_REQUEST = 11;
     private final String TAG = "ChoosingFragment";
     private File mImageFile;
     private Context context;
@@ -110,7 +119,7 @@ public class ChoosingFragment extends Fragment {
 
         if (mImageFile != null)
         {
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
+            if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
             {
                 Intent takePhotoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 Uri imageUri = Uri.fromFile(mImageFile);
@@ -118,8 +127,29 @@ public class ChoosingFragment extends Fragment {
                 takePhotoIntent.putExtra(android.provider.MediaStore.EXTRA_SCREEN_ORIENTATION, ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
                 addIntentsToList(takePhotoIntent, intentList);
             }
-            else
-                Log.d(TAG, "Camera permission not granted");
+            else {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
+                        Manifest.permission.READ_CONTACTS)) {
+
+                    Log.d(TAG, "Camera permission not granted");
+                    // Show an explanation to the user *asynchronously* -- don't block
+                    // this thread waiting for the user's response! After the user
+                    // sees the explanation, try again to request the permission.
+
+                } else {
+
+                    // No explanation needed, we can request the permission.
+
+                    ActivityCompat.requestPermissions(getActivity(),
+                            new String[]{Manifest.permission.CAMERA},
+                            CAMERA_REQUEST);
+                    return;
+
+                    // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                    // app-defined int constant. The callback method gets the
+                    // result of the request.
+                }
+            }
 
             if (!intentList.isEmpty())
             {
@@ -168,7 +198,7 @@ public class ChoosingFragment extends Fragment {
     private File createImageFile() throws IOException
     {
         // Create an image file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.UK).format(new Date());
         String imageFileName = timeStamp + '_';
         File storageDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         File image = File.createTempFile(
@@ -286,4 +316,5 @@ public class ChoosingFragment extends Fragment {
     public void setImageCatcher(ImageCatcher imageCatcher) {
         this.imageCatcher = imageCatcher;
     }
+    //endregion
 }

@@ -33,16 +33,6 @@
     </FrameLayout>
 
     <android.support.design.widget.FloatingActionButton
-        android:id="@+id/fabCapture"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center"
-        android:layout_margin="@dimen/fab_margin"
-        android:src="@drawable/ic_camera"
-        android:onClick="clickImageChoose"
-        android:visibility="invisible" />
-
-    <android.support.design.widget.FloatingActionButton
         android:id="@+id/fabGood"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -101,16 +91,5 @@
         android:src="@drawable/ic_back"
         android:onClick="clickImageBack"
         android:visibility="invisible" />
-
-    <android.support.design.widget.FloatingActionButton
-        android:id="@+id/fabUpload"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|right"
-        android:layout_margin="@dimen/fab_margin"
-        android:src="@drawable/ic_file_upload"
-        android:onClick="clickImageUpload"
-        android:visibility="invisible" />
-
 
 </android.support.design.widget.CoordinatorLayout>

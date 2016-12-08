@@ -2,6 +2,8 @@ package com.scaletools.recipecathcer.network;
 
 import android.content.Context;
 import android.graphics.Rect;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -33,18 +35,26 @@ import java.util.Map;
  * Created by Ator on 04/10/16.
  */
 
-public class RequestProcessor {
+public class RequestProcessor implements Parcelable {
+
+    //region Constants
     private static final String TAG = "RequestProcessor";
     private static final String URL = "http://192.168.0.103/RecipeParser/api/recipe/";
+    private static final int REQUEST_TIMEOUT = 5000;
+    private static final int REQUEST_RETRIES = 2;
     public static final String OCR = "ocr";
     public static final String PARSE = "parse";
-    private static final int REQUEST_TIMEOUT = 5000;
-    private static final int REQUEST_RETRIES = 4;
+    //endregion
 
+
+    //region Fields
     private List<Rect> responseBounds;
     private JSONObject jsonResult;
     private JSONObject jsonRecipe;
+    //endregion
 
+
+    //region Send
     public void sendImageForRecognition(Context context, final byte[] imageBytes,
                                         @Nullable RequestQueue.RequestFinishedListener<NetworkResponse> listener) {
 
@@ -52,41 +62,7 @@ public class RequestProcessor {
                 (Request.Method.POST, URL + OCR, new Response.Listener<NetworkResponse>() {
             @Override
             public void onResponse(NetworkResponse response) {
-                List<Rect> rectangles = new ArrayList<>();
-                String resultResponse = new String(response.data);
-
-                try {
-                    jsonResult = new JSONObject(resultResponse);
-                    JSONArray lines = jsonResult
-                            .getJSONArray("ParsedResults")
-                            .getJSONObject(0)
-                            .getJSONObject("TextOverlay")
-                            .getJSONArray("Lines");
-
-                    for (int i = 0; i < lines.length(); i++) {
-                        JSONArray words = lines.getJSONObject(i).getJSONArray("Words");
-                        for (int j = 0; j < words.length(); j++) {
-                            int left = words.getJSONObject(j).getInt("Left");
-                            int top = words.getJSONObject(j).getInt("Top");
-                            int width = words.getJSONObject(j).getInt("Width");
-                            int height = words.getJSONObject(j).getInt("Height");
-                            rectangles.add(new Rect(left, top, left + width, top + height));
-                        }
-                    }
-
-                    responseBounds = rectangles;
-                    String status = jsonResult.getString("OCRExitCode");
-                    String message = jsonResult.getString("ErrorMessage");
-
-                    if (status.equals("1")) {
-                        // tell everybody you have succed upload image and post strings
-                        Log.i("INFO", "Request success!");
-                    } else {
-                        Log.i("ERROR", message);
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+                processResponse(new String(response.data));
             }
         }, new Response.ErrorListener() {
             @Override
@@ -113,16 +89,6 @@ public class RequestProcessor {
         VolleySingleton.getInstance(context).addToRequestQueue(multipartRequest);
     }
 
-    private RetryPolicy retryPolicy() {
-        return new DefaultRetryPolicy(REQUEST_TIMEOUT,
-                REQUEST_RETRIES,
-                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT);
-    }
-
-    public List<Rect> getResponseBounds() {
-        return responseBounds;
-    }
-
     public boolean sendJsonForParsing(Context context,
                                       @Nullable RequestQueue.RequestFinishedListener<NetworkResponse> listener) {
         if (jsonResult == null) return false;
@@ -136,7 +102,7 @@ public class RequestProcessor {
                     response = response.substring(1, response.length() - 1).replace("\\\"", "\"");
                     jsonRecipe = new JSONObject(response);
                 } catch (JSONException e) {
-                    Log.e("JSON ERROR", e.getMessage());
+                    Log.e(TAG, "JSON PARSING ERROR: " + e.getMessage());
                 }
             }
         }, new Response.ErrorListener() {
@@ -155,7 +121,7 @@ public class RequestProcessor {
                 try {
                     return jsonResult.toString().getBytes("ISO-8859-1");
                 } catch (UnsupportedEncodingException e) {
-                    Log.e("UNKNOWN ERROR", e.getMessage());
+                    Log.e(TAG, "UNKNOWN ERROR: " + e.getMessage());
                     return new byte[1];
                 }
             }
@@ -170,11 +136,10 @@ public class RequestProcessor {
         VolleySingleton.getInstance(context).addToRequestQueue(stringRequest);
         return true;
     }
+    //endregion
 
-    public JSONObject getJsonRecipe() {
-        return jsonRecipe;
-    }
 
+    //region Helpers
     private void handleErrorResponse(VolleyError error) {
         NetworkResponse networkResponse = error.networkResponse;
         String errorMessage = "Unknown error";
@@ -191,8 +156,8 @@ public class RequestProcessor {
                 String status = response.getString("status");
                 String message = response.getString("message");
 
-                Log.e("Error Status", status);
-                Log.e("Error Message", message);
+                Log.e(TAG, "Error Status: " + status);
+                Log.e(TAG, "Error Message: " + message);
 
                 if (networkResponse.statusCode == 404) {
                     errorMessage = "Resource not found";
@@ -207,7 +172,99 @@ public class RequestProcessor {
                 e.printStackTrace();
             }
         }
-        Log.i("Error", errorMessage);
-        error.printStackTrace();
+        Log.e(TAG, "Error" + errorMessage, error);
     }
+
+    private void processResponse(String resultResponse) {
+        List<Rect> rectangles = new ArrayList<>();
+        try {
+            jsonResult = new JSONObject(resultResponse);
+            JSONArray lines = jsonResult
+                    .getJSONArray("ParsedResults")
+                    .getJSONObject(0)
+                    .getJSONObject("TextOverlay")
+                    .getJSONArray("Lines");
+
+            for (int i = 0; i < lines.length(); i++) {
+                JSONArray words = lines.getJSONObject(i).getJSONArray("Words");
+                for (int j = 0; j < words.length(); j++) {
+                    int left = words.getJSONObject(j).getInt("Left");
+                    int top = words.getJSONObject(j).getInt("Top");
+                    int width = words.getJSONObject(j).getInt("Width");
+                    int height = words.getJSONObject(j).getInt("Height");
+                    rectangles.add(new Rect(left, top, left + width, top + height));
+                }
+            }
+
+            responseBounds = rectangles;
+            String status = jsonResult.getString("OCRExitCode");
+            String message = jsonResult.getString("ErrorMessage");
+
+            if (status.equals("1")) {
+                Log.i(TAG, "Request success!");
+            } else {
+                Log.e(TAG, "ERROR DURING OCR: " + message);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private RetryPolicy retryPolicy() {
+        return new DefaultRetryPolicy(REQUEST_TIMEOUT,
+                REQUEST_RETRIES,
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT);
+    }
+    //endregion
+
+
+    //region Get
+    public List<Rect> getResponseBounds() {
+        return responseBounds;
+    }
+
+    public JSONObject getJsonRecipe() {
+        return jsonRecipe;
+    }
+    //endregion
+
+
+    //region Parcelable
+    protected RequestProcessor(Parcel in) {
+        responseBounds = in.createTypedArrayList(Rect.CREATOR);
+        try {
+            jsonResult = new JSONObject(in.readString());
+            jsonRecipe = new JSONObject(in.readString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static final Creator<RequestProcessor> CREATOR = new Creator<RequestProcessor>() {
+        @Override
+        public RequestProcessor createFromParcel(Parcel in) {
+            return new RequestProcessor(in);
+        }
+
+        @Override
+        public RequestProcessor[] newArray(int size) {
+            return new RequestProcessor[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeTypedList(responseBounds);
+        parcel.writeString(jsonResult.toString());
+        parcel.writeString(jsonRecipe.toString());
+    }
+    //endregion
+
+
+    public RequestProcessor() {}
 }

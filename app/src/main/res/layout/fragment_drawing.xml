@@ -1,6 +1,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:id="@+id/fragmentDrawing">
 
     <it.sephiroth.android.library.imagezoom.ImageViewTouch
         android:layout_width="match_parent"
@@ -15,10 +16,10 @@
         android:id="@+id/drawingView"
         android:visibility="invisible" />
 
-    <com.scaletools.recipecathcer.view.CropImageView
+    <com.scaletools.recipecathcer.view.CroppingView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/cropImageView"
+        android:id="@+id/croppingView"
         android:visibility="invisible" />
 
     <ImageView

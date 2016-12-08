@@ -11,29 +11,24 @@ import com.scaletools.recipecathcer.R;
 
 import org.json.JSONObject;
 
-
 /**
- * A simple {@link Fragment} subclass.
- * Use the {@link ResultFragment#newInstance} factory method to
- * create an instance of this fragment.
+ * Sample response fragment with full screen TextView, should be replaced with a proper result fragment
  */
 public class ResultFragment extends Fragment {
-    private TextView textView;
-    private String resultText = "Error!";
-    public ResultFragment() {
-        // Required empty public constructor
-    }
+    private static final String ARG_JSON = "json";
+
+    public ResultFragment() {}
 
     /**
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
-     *
+     * @param jsonObject a recipe json
      * @return A new instance of fragment ResultFragment.
      */
-    // TODO: Rename and change types and number of parameters
-    public static ResultFragment newInstance() {
+    public static ResultFragment newInstance(JSONObject jsonObject) {
         ResultFragment fragment = new ResultFragment();
         Bundle args = new Bundle();
+        args.putString(ARG_JSON, jsonObject.toString());
         fragment.setArguments(args);
         return fragment;
     }
@@ -41,22 +36,22 @@ public class ResultFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
+        // DO NOT REMOVE! Inflates the layout for this fragment
         return inflater.inflate(R.layout.fragment_result, container, false);
     }
 
+
     @Override
     public void onViewCreated(final View view, Bundle savedInstanceState) {
-        textView = (TextView) view.findViewById(R.id.resultText);
-        textView.setText(resultText);
-    }
+        TextView textView = (TextView) view.findViewById(R.id.resultText);
 
-    public void showResult(JSONObject resultJson) {
-        if (resultJson != null) {
-            if (textView != null)
-                textView.setText(resultJson.toString());
-            else
-                resultText = resultJson.toString();
+        if (getArguments() != null) {
+            String resultText = getArguments().getString(ARG_JSON);
+            if (resultText != null) {
+                textView.setText(resultText);
+            } else {
+                textView.setText("ERROR");
+            }
         }
     }
 }

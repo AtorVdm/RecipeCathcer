@@ -2,7 +2,6 @@ package com.scaletools.recipecathcer.view;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -10,13 +9,18 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.widget.ImageView;
 
-import com.scaletools.recipecathcer.util.DrawingInitUtils;
+import com.scaletools.recipecathcer.helper.State;
+import com.scaletools.recipecathcer.util.DrawingUtils;
+
+import static com.scaletools.recipecathcer.util.DrawingUtils.TOUCH_TOLERANCE;
 
 /**
  * Created by Ator on 20/10/16.
  */
 
 public class DrawingView extends ImageView {
+
+    //region Fields
     private Bitmap mBitmap;
     private Canvas mCanvas;
     private Path mPath;
@@ -25,7 +29,10 @@ public class DrawingView extends ImageView {
     private Path circlePath;
 
     private State state;
+    //endregion
 
+
+    //region Init
     public DrawingView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
@@ -39,11 +46,15 @@ public class DrawingView extends ImageView {
     private void init() {
         state = State.VIEW;
 
+        circlePaint = DrawingUtils.getCirclePaint();
+        mPaint = DrawingUtils.getPathPaint();
+
+        reset();
+    }
+
+    private void reset() {
         mPath = new Path();
         circlePath = new Path();
-
-        circlePaint = DrawingInitUtils.getCirclePaint();
-        mPaint = DrawingInitUtils.getPathPaint();
     }
 
     @Override
@@ -72,9 +83,34 @@ public class DrawingView extends ImageView {
         canvas.drawPath(mPath,  mPaint);
         canvas.drawPath(circlePath,  circlePaint);
     }
+    //endregion
+
+
+    //region Touch
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        if (state == State.VIEW) {
+            super.onTouchEvent(event);
+        } else if (state == State.BRUSH) {
+            float x = event.getX();
+            float y = event.getY();
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    touch_start_drawing(x, y);
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    touch_move_drawing(x, y);
+                    break;
+                case MotionEvent.ACTION_UP:
+                    touch_up_drawing();
+                    break;
+            }
+            invalidate();
+        }
+        return true;
+    }
 
     private float mX, mY;
-    private static final float TOUCH_TOLERANCE = 4;
 
     private void touch_start_drawing(float x, float y) {
         mPath.reset();
@@ -83,9 +119,7 @@ public class DrawingView extends ImageView {
         mY = y;
     }
 
-    private void touch_move_drawing(float x, float y) {/*
-        if (!getBitmapRect().contains(x + STROKE_WIDTH, y + STROKE_WIDTH) &&
-                !getBitmapRect().contains(x - STROKE_WIDTH, y - STROKE_WIDTH)) return;*/
+    private void touch_move_drawing(float x, float y) {
         float dx = Math.abs(x - mX);
         float dy = Math.abs(y - mY);
         if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
@@ -105,47 +139,17 @@ public class DrawingView extends ImageView {
         // kill this so we don't double draw
         mPath.reset();
     }
+    //endregion
 
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        if (state == State.VIEW) {
-            super.onTouchEvent(event);
-        } else if (state == State.EDIT) {
-            float x = event.getX();
-            float y = event.getY();
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    touch_start_drawing(x, y);
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    touch_move_drawing(x, y);
-                    break;
-                case MotionEvent.ACTION_UP:
-                    touch_up_drawing();
-                    break;
-            }
-            invalidate();
-        }
-        return true;
-    }
 
-    public State getState() {
-        return state;
-    }
-
+    //region get/set
     public void setState(State state) {
-        if ((this.state == State.EDIT || this.state == State.SELECT)
-                && state == State.VIEW) {
-            updateBitmap(getWidth(), getHeight());
-        }
         this.state = state;
+        reset();
     }
 
     public Bitmap getImageBitmap() {
         return mBitmap;
     }
-
-    public enum State {
-        VIEW, EDIT, SELECT
-    }
+    //endregion
 }
