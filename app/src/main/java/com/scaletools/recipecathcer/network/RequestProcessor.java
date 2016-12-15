@@ -18,6 +18,7 @@ import com.android.volley.RetryPolicy;
 import com.android.volley.TimeoutError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
+import com.scaletools.recipecathcer.R;
 import com.scaletools.recipecathcer.network.volley.VolleyMultipartRequest;
 import com.scaletools.recipecathcer.network.volley.VolleySingleton;
 
@@ -39,7 +40,6 @@ public class RequestProcessor implements Parcelable {
 
     //region Constants
     private static final String TAG = "RequestProcessor";
-    private static final String URL = "http://192.168.0.103/RecipeParser/api/recipe/";
     private static final int REQUEST_TIMEOUT = 5000;
     private static final int REQUEST_RETRIES = 2;
     public static final String OCR = "ocr";
@@ -54,12 +54,16 @@ public class RequestProcessor implements Parcelable {
     //endregion
 
 
+    public RequestProcessor() { }
+
+
     //region Send
     public void sendImageForRecognition(Context context, final byte[] imageBytes,
                                         @Nullable RequestQueue.RequestFinishedListener<NetworkResponse> listener) {
+        String url = context.getResources().getString(R.string.api_url);
 
         final VolleyMultipartRequest multipartRequest = new VolleyMultipartRequest
-                (Request.Method.POST, URL + OCR, new Response.Listener<NetworkResponse>() {
+                (Request.Method.POST, url + OCR, new Response.Listener<NetworkResponse>() {
             @Override
             public void onResponse(NetworkResponse response) {
                 processResponse(new String(response.data));
@@ -92,9 +96,10 @@ public class RequestProcessor implements Parcelable {
     public boolean sendJsonForParsing(Context context,
                                       @Nullable RequestQueue.RequestFinishedListener<NetworkResponse> listener) {
         if (jsonResult == null) return false;
+        String url = context.getResources().getString(R.string.api_url);
 
         final StringRequest stringRequest = new StringRequest
-                (Request.Method.POST, URL + PARSE, new Response.Listener<String>() {
+                (Request.Method.POST, url + PARSE, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
                 try {
@@ -264,7 +269,4 @@ public class RequestProcessor implements Parcelable {
         parcel.writeString(jsonRecipe.toString());
     }
     //endregion
-
-
-    public RequestProcessor() {}
 }
