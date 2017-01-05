@@ -48,12 +48,17 @@ public class DrawingView extends ImageView {
 
         circlePaint = DrawingUtils.getCirclePaint();
         mPaint = DrawingUtils.getPathPaint();
-
-        reset();
     }
 
     private void reset() {
-        mPath = new Path();
+        if (mPath == null)
+            mPath = new Path();
+        else
+            mPath.reset();
+
+        if (mBitmap != null)
+            updateBitmap(mBitmap.getWidth(), mBitmap.getHeight());
+
         circlePath = new Path();
     }
 

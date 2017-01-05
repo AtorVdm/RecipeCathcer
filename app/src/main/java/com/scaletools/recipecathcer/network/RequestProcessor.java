@@ -223,13 +223,19 @@ public class RequestProcessor implements Parcelable {
     //endregion
 
 
-    //region Get
+    //region Get/Reset
     public List<Rect> getResponseBounds() {
         return responseBounds;
     }
 
     public JSONObject getJsonRecipe() {
         return jsonRecipe;
+    }
+
+    public void reset() {
+        responseBounds = null;
+        jsonRecipe = null;
+        jsonResult = null;
     }
     //endregion
 
@@ -264,9 +270,12 @@ public class RequestProcessor implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel parcel, int i) {
-        parcel.writeTypedList(responseBounds);
-        parcel.writeString(jsonResult.toString());
-        parcel.writeString(jsonRecipe.toString());
+        if (responseBounds != null)
+            parcel.writeTypedList(responseBounds);
+        if (jsonResult != null)
+            parcel.writeString(jsonResult.toString());
+        if (jsonRecipe != null)
+            parcel.writeString(jsonRecipe.toString());
     }
     //endregion
 }

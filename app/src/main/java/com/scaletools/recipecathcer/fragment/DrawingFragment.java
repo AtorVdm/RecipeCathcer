@@ -302,13 +302,22 @@ public class DrawingFragment extends Fragment {
     }
 
     public boolean sendJsonForParsing(@Nullable RequestQueue.RequestFinishedListener<NetworkResponse> listener) {
-        getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
-        return requestProcessor.sendJsonForParsing(context, listener);
+        boolean result = requestProcessor.sendJsonForParsing(context, listener);
+        if (result) {
+            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+        }
+        return result;
     }
 
-    public void cancelOcrResult() {
-        resultBounds.setImageBitmap(null);
-        setScaleEnabled(true);
+    public boolean cancelOcrResult() {
+        if (resultBounds.getDrawable() != null) {
+            resultBounds.setVisibility(View.INVISIBLE);
+            requestProcessor.reset();
+            setScaleEnabled(true);
+            return true;
+        } else {
+            return false;
+        }
     }
     //endregion
 

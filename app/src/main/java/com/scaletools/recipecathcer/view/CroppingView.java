@@ -62,6 +62,12 @@ public class CroppingView extends ImageView {
     private void reset() {
         if (mPath == null)
             mPath = new Path();
+        else
+            mPath.reset();
+
+        if (mBitmap != null)
+            updateBackground();
+
         circlePath = new Path();
     }
 

@@ -47,8 +47,6 @@ public class MainActivity extends AppCompatActivity
 
     //region Fields
     private List<FloatingActionButton> fabList = new ArrayList<>();
-    private FloatingActionButton fabGood;
-    private FloatingActionButton fabDismiss;
     private FloatingActionButton fabBrush;
     private FloatingActionButton fabSelect;
     private FloatingActionButton fabContinue;
@@ -66,13 +64,11 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        fabGood = fab(R.id.fabGood);
-        fabDismiss = fab(R.id.fabDismiss);
         fabBrush = fab(R.id.fabBrush);
         fabSelect = fab(R.id.fabSelect);
         fabContinue = fab(R.id.fabContinue);
         fabBack = fab(R.id.fabBack);
-        fabList = Arrays.asList(fabGood, fabDismiss, fabBrush,
+        fabList = Arrays.asList(fabBrush,
                 fabSelect, fabContinue, fabBack);
         
         if (savedInstanceState == null) {
@@ -161,97 +157,71 @@ public class MainActivity extends AppCompatActivity
             Log.e(TAG, "Error restoring instance state: " + e.getLocalizedMessage());
         }
     }
-
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-    }
-
     //endregion
 
 
     //region onClick
-    public void clickImageApprove(View v) {
-        if (drawingFragment.processImage(this)) {
-            scanMode();
-        }
-    }
-
-    public void clickImageDismiss(View v) {
-        showChoosingFragment();
-    }
-
     public void clickImageBrush(View v) {
         if (drawingFragment != null) {
-            if (drawingFragment.getState() == State.BRUSH) {
-                // BRUSH -> VIEW (OK)
-                drawingFragment.setState(State.VIEW);
-                drawingFragment.approveDrawing();
-                stopEditing();
-                decisionMode();
-            } else if (drawingFragment.getState() == State.VIEW) {
+            if (drawingFragment.getState() == State.VIEW) {
                 // VIEW -> BRUSH
                 startEditing(State.BRUSH);
-            } else if (drawingFragment.getState() == State.SELECT) {
-                // SELECT -> VIEW (CANCEL)
-                stopEditing();
             }
         }
     }
 
     public void clickImageSelect(View v) {
         if (drawingFragment != null) {
-            if (drawingFragment.getState() == State.SELECT) {
-                // SELECT -> VIEW (OK)
-                drawingFragment.cutSelectedArea();
-                stopEditing();
-                decisionMode();
-            } else if (drawingFragment.getState() == State.VIEW) {
+            if (drawingFragment.getState() == State.VIEW) {
                 // VIEW -> SELECT
                 startEditing(State.SELECT);
-            } else if (drawingFragment.getState() == State.BRUSH) {
-                // BRUSH -> VIEW (CANCEL)
-                stopEditing();
             }
         }
     }
 
     private void stopEditing() {
-        if (drawingFragment == null) return;
         drawingFragment.setState(State.VIEW);
-        setFabResourceAlpha(fabBrush, R.drawable.ic_brush, 1f);
-        setFabResourceAlpha(fabSelect, R.drawable.ic_select_area, 1f);
         decisionMode();
     }
 
     private void startEditing(State state) {
         drawingFragment.setState(state);
-        if (state == State.BRUSH) {
-            setFabResourceAlpha(fabBrush, R.drawable.ic_check, .3f);
-            setFabResourceAlpha(fabSelect, R.drawable.ic_cross, .3f);
-        } else if (state == State.SELECT) {
-            setFabResourceAlpha(fabSelect, R.drawable.ic_check, .3f);
-            setFabResourceAlpha(fabBrush, R.drawable.ic_cross, .3f);
-        }
         editingMode();
     }
 
     public void clickImageContinue(View v) {
-        if (!drawingFragment.sendJsonForParsing(this)) {
-            drawingFragment.processImage(this);
-            scanMode();
+        if (drawingFragment != null) {
+            if (drawingFragment.getState() == State.BRUSH) {
+                // BRUSH -> VIEW (OK)
+                drawingFragment.approveDrawing();
+                stopEditing();
+                decisionMode();
+            } else if (drawingFragment.getState() == State.SELECT) {
+                // SELECT -> VIEW (OK)
+                drawingFragment.cutSelectedArea();
+                stopEditing();
+                decisionMode();
+                // Try to send a ready JSON of the recipe for parsing
+            } else if (!drawingFragment.sendJsonForParsing(this)) {
+                // If JSON is not there yet, try processing the image
+                drawingFragment.processImage(this);
+                scanMode();
+            }
         }
     }
 
     public void clickImageBack(View v) {
-        drawingFragment.cancelOcrResult();
-        decisionMode();
-    }
-
-    private void setFabResourceAlpha(FloatingActionButton fab, int resource, float alpha) {
-        fab.setImageResource(resource);
-        fab.setTag(resource);
-        fab.setAlpha(alpha);
+        if (drawingFragment != null) {
+            if (drawingFragment.getState() == State.SELECT ||
+                    drawingFragment.getState() == State.BRUSH) {
+                // SELECT/BRUSH -> VIEW (CANCEL)
+                stopEditing();
+            } else if (drawingFragment.cancelOcrResult()) {
+                decisionMode();
+            } else {
+                showChoosingFragment();
+            }
+        }
     }
     //endregion
 
@@ -262,7 +232,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void decisionMode() {
-        displayButtons(fabGood, fabDismiss, fabBrush, fabSelect);
+        displayButtons(fabContinue, fabBack, fabBrush, fabSelect);
     }
 
     private void scanMode() {
@@ -270,7 +240,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void editingMode() {
-        displayButtons(fabBrush, fabSelect);
+        displayButtons(fabContinue, fabBack);
     }
 
     private void displayButtons(FloatingActionButton... fabs) {
@@ -325,7 +295,7 @@ public class MainActivity extends AppCompatActivity
     //endregion
 
     public void showRequestButtons(boolean success) {
-        int resource = success? R.drawable.ic_continue: R.drawable.ic_try_again;
+        int resource = success? R.drawable.ic_check: R.drawable.ic_try_again;
         fabContinue.setImageResource(resource);
         fabContinue.setTag(resource);
         displayButtons(fabContinue, fabBack);
