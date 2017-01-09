@@ -85,8 +85,8 @@ public class DrawingView extends ImageView {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawPath(mPath,  mPaint);
-        canvas.drawPath(circlePath,  circlePaint);
+        canvas.drawPath(mPath, mPaint);
+        canvas.drawPath(circlePath, circlePaint);
     }
     //endregion
 

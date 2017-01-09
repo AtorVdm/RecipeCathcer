@@ -64,4 +64,23 @@ public class DrawingUtils {
         canvas.drawColor(Color.TRANSPARENT);
         return bitmap;
     }
+
+    public static Bitmap replaceColorIn(Bitmap bitmap, int from, int to) {
+        int [] allPixels = new int [bitmap.getHeight() * bitmap.getWidth()];
+
+        bitmap.getPixels(allPixels, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+
+        for(int i = 0; i < allPixels.length; i++)
+        {
+            if(allPixels[i] == from)
+            {
+                allPixels[i] = to;
+            }
+        }
+
+        Bitmap result = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), bitmap.getConfig());
+        result.setPixels(allPixels, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+
+        return result;
+    }
 }

@@ -4,11 +4,9 @@ import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
@@ -266,9 +264,7 @@ public class DrawingFragment extends Fragment {
     }
 
     public void cutSelectedArea() {
-        // a rect cropped by user in screen coordinates
-        Path cutImageArea = croppingView.getPath();
-        if (cutImageArea.isEmpty()) return;
+        if (!croppingView.isUpdated()) return;
 
         // a rect that represents image position on a screen
         Rect recipeImageRect = new Rect();
@@ -283,22 +279,35 @@ public class DrawingFragment extends Fragment {
         m.postTranslate(- recipeImageRect.left, - recipeImageRect.top);
         m.postScale(scaleFactorH, scaleFactorV);
 
-        // apply the matrix to a RectF
-        Path actualCutImageArea = new Path();
-        cutImageArea.transform(m, actualCutImageArea);
-
         Bitmap resultBitmap = Bitmap.createBitmap(imageBitmap.getWidth(), imageBitmap.getHeight(), imageBitmap.getConfig());
         Canvas canvas = new Canvas(resultBitmap);
-        Paint paint = new Paint();
-        paint.setAntiAlias(true);
-        canvas.drawPath(actualCutImageArea, paint);
 
-        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
-        canvas.drawBitmap(imageBitmap, 0, 0, paint);
+        // draw initial bitmap on the canvas
+        canvas.drawBitmap(imageBitmap, 0, 0, null);
+
+        Bitmap backgroundSelectionBitmap = croppingView.getBackgroundBitmap();
+        backgroundSelectionBitmap = DrawingUtils.replaceColorIn(backgroundSelectionBitmap, DrawingUtils.getShadeColor(), Color.BLACK);
+
+        // draw black area which replaces parts of the bitmap that weren't selected
+        canvas.drawBitmap(backgroundSelectionBitmap, m, null);
+
+        // find variables of the matrix for painted area
+        float[] values = new float[9];
+        m.getValues(values);
+        float areaX = values[Matrix.MTRANS_X];
+        float areaY = values[Matrix.MTRANS_Y];
+        float areaWidth = values[Matrix.MSCALE_X] * backgroundSelectionBitmap.getWidth();
+        float areaHeight = values[Matrix.MSCALE_Y] * backgroundSelectionBitmap.getHeight();
+
+        // paint unaffected areas in case of zoomed image
+        Paint blackPaint = new Paint(Color.BLACK);
+        canvas.drawRect(0, 0, areaX, imageBitmap.getHeight(), blackPaint);
+        canvas.drawRect(0, 0, imageBitmap.getWidth(), areaY, blackPaint);
+        canvas.drawRect(areaX + areaWidth, 0, imageBitmap.getWidth(), imageBitmap.getHeight(), blackPaint);
+        canvas.drawRect(0, areaY + areaHeight, imageBitmap.getWidth(), imageBitmap.getHeight(), blackPaint);
 
         imageBitmap = resultBitmap;
         imageView.setImageDrawable(new BitmapDrawable(context.getResources(), imageBitmap));
-        zoomImageView();
     }
 
     public boolean sendJsonForParsing(@Nullable RequestQueue.RequestFinishedListener<NetworkResponse> listener) {

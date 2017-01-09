@@ -99,12 +99,8 @@ public class CroppingView extends ImageView {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        Path drawingPath = new Path(mPath);
-        if (!circlePath.isEmpty()) {
-            drawingPath.close();
-        }
 
-        mBackgroundCanvas.drawPath(drawingPath,  mPaint);
+        mBackgroundCanvas.drawPath(mPath,  mPaint);
         canvas.drawBitmap(mBackgroundBitmap, 0, 0, null);
         canvas.drawPath(circlePath, circlePaint);
     }
@@ -163,6 +159,8 @@ public class CroppingView extends ImageView {
     private void touch_up_drawing() {
         mPath.lineTo(startX, startY);
         circlePath.reset();
+
+        mBackgroundCanvas.drawBitmap(mBitmap, 0, 0, new Paint());
     }
     //endregion
 
@@ -173,8 +171,12 @@ public class CroppingView extends ImageView {
         reset();
     }
 
-    public Path getPath() {
-        return mPath;
+    public boolean isUpdated() {
+        return !mPath.isEmpty();
+    }
+
+    public Bitmap getBackgroundBitmap() {
+        return mBackgroundBitmap;
     }
     //endregion
 }
