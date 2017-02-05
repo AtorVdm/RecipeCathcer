@@ -1,48 +1,48 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/fragmentDrawing"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:id="@+id/fragmentDrawing">
+    android:layout_height="match_parent">
 
     <it.sephiroth.android.library.imagezoom.ImageViewTouch
+        android:id="@+id/recipeImage"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/recipeImage"
         android:background="@color/colorBlack"
         android:scaleType="fitCenter" />
 
     <com.scaletools.recipecathcer.view.DrawingView
+        android:id="@+id/drawingView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/drawingView"
         android:visibility="invisible" />
 
     <com.scaletools.recipecathcer.view.CroppingView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
         android:id="@+id/croppingView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:visibility="invisible" />
 
     <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:src="@drawable/scanner_line"
         android:id="@+id/scannerLine"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:scaleType="centerCrop"
+        android:src="@drawable/scanner_line"
         android:visibility="invisible" />
 
     <ImageView
+        android:id="@+id/scannerNet"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/scanner_net"
-        android:id="@+id/scannerNet"
+        android:alpha="0.2"
         android:scaleType="fitCenter"
-        android:visibility="invisible"
-        android:alpha="0.2" />
+        android:src="@drawable/scanner_net"
+        android:visibility="invisible" />
 
     <ImageView
+        android:id="@+id/resultBounds"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/resultBounds"
         android:scaleType="fitCenter"
         android:visibility="invisible" />
 

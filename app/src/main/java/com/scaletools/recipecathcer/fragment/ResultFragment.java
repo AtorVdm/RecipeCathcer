@@ -17,11 +17,13 @@ import org.json.JSONObject;
 public class ResultFragment extends Fragment {
     private static final String ARG_JSON = "json";
 
-    public ResultFragment() {}
+    public ResultFragment() {
+    }
 
     /**
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
+     *
      * @param jsonObject a recipe json
      * @return A new instance of fragment ResultFragment.
      */
@@ -39,7 +41,6 @@ public class ResultFragment extends Fragment {
         // DO NOT REMOVE! Inflates the layout for this fragment
         return inflater.inflate(R.layout.fragment_result, container, false);
     }
-
 
     @Override
     public void onViewCreated(final View view, Bundle savedInstanceState) {

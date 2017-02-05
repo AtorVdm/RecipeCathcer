@@ -11,7 +11,7 @@ import com.android.volley.toolbox.Volley;
 
 /**
  * Singleton volley to populate request into single queue.
- * 
+ * <p>
  * Sketch Project Studio
  * Created by Angga on 22/04/2016 22.58.
  */

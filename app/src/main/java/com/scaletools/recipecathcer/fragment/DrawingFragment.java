@@ -70,11 +70,13 @@ public class DrawingFragment extends Fragment {
 
 
     //region Init
-    public DrawingFragment() {}
+    public DrawingFragment() {
+    }
 
     /**
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
+     *
      * @param bitmap Bitmap to edit.
      * @return A new instance of fragment DrawingFragment.
      */
@@ -134,7 +136,7 @@ public class DrawingFragment extends Fragment {
         outState.putSerializable(STATE, getState());
         outState.putParcelable(BITMAP, imageBitmap);
         outState.putParcelable(REQUEST_PROCESSOR, requestProcessor);
-        outState.putBoolean(RESULT_VISIBLE, resultBounds.getVisibility() == View.VISIBLE? true: false);
+        outState.putBoolean(RESULT_VISIBLE, resultBounds.getVisibility() == View.VISIBLE ? true : false);
     }
 
     @Override
@@ -243,24 +245,24 @@ public class DrawingFragment extends Fragment {
 
     public void approveDrawing() {
         Bitmap bitmapDrawing = drawingView.getImageBitmap();
+        float[] values = new float[9];
+        imageView.getImageMatrix().getValues(values);
+        // coordinates of zoomed area that is being painted
+        float left = (-values[Matrix.MTRANS_X]) / values[Matrix.MSCALE_X];
+        float top = (-values[Matrix.MTRANS_Y]) / values[Matrix.MSCALE_Y];
+        float width = (imageView.getWidth() - values[Matrix.MTRANS_X]) / values[Matrix.MSCALE_X] - left;
+        float height = (imageView.getHeight() - values[Matrix.MTRANS_Y]) / values[Matrix.MSCALE_Y] - top;
 
-        Rect recipeImageRect = new Rect();
-        imageView.getBitmapRect().round(recipeImageRect);
-        Bitmap croppedBitmapDrawing = Bitmap.createBitmap(bitmapDrawing,
-                recipeImageRect.left, recipeImageRect.top,
-                recipeImageRect.right - recipeImageRect.left,
-                recipeImageRect.bottom - recipeImageRect.top);
-        Bitmap scaledBitmapDrawing = Bitmap.createScaledBitmap(croppedBitmapDrawing,
-                imageBitmap.getWidth(), imageBitmap.getHeight(), true);
+        // scaling the drawing to paint on the main bitmap
+        Bitmap scaledBitmapDrawing = Bitmap.createScaledBitmap(bitmapDrawing, (int) (width), (int) (height), true);
 
-        croppedBitmapDrawing.recycle();
-
+        // drawing the painted area on top of the main bitmap
         Canvas canvas = new Canvas(imageBitmap);
-        canvas.drawBitmap(scaledBitmapDrawing, new Matrix(), new Paint());
+        canvas.drawBitmap(scaledBitmapDrawing, left, top, new Paint());
 
         scaledBitmapDrawing.recycle();
 
-        imageView.setImageDrawable(new BitmapDrawable(context.getResources(), imageBitmap));
+        imageView.setImageDrawable(new BitmapDrawable(context.getResources(), imageBitmap), imageView.getDisplayMatrix(), -1.0F, -1.0F);
     }
 
     public void cutSelectedArea() {
@@ -271,12 +273,12 @@ public class DrawingFragment extends Fragment {
         imageView.getBitmapRect().round(recipeImageRect);
 
         // get the scale factors for both vertical and horizontal since we're dealing with a square inside of a rectangle
-        float scaleFactorH = (float)imageBitmap.getWidth() / (float)(recipeImageRect.right - recipeImageRect.left);
-        float scaleFactorV = (float)imageBitmap.getHeight() / (float)(recipeImageRect.bottom - recipeImageRect.top);
+        float scaleFactorH = (float) imageBitmap.getWidth() / (float) (recipeImageRect.right - recipeImageRect.left);
+        float scaleFactorV = (float) imageBitmap.getHeight() / (float) (recipeImageRect.bottom - recipeImageRect.top);
 
         // create a matrix and apply the scale factors
         Matrix m = new Matrix();
-        m.postTranslate(- recipeImageRect.left, - recipeImageRect.top);
+        m.postTranslate(-recipeImageRect.left, -recipeImageRect.top);
         m.postScale(scaleFactorH, scaleFactorV);
 
         Bitmap resultBitmap = Bitmap.createBitmap(imageBitmap.getWidth(), imageBitmap.getHeight(), imageBitmap.getConfig());
@@ -307,7 +309,8 @@ public class DrawingFragment extends Fragment {
         canvas.drawRect(0, areaY + areaHeight, imageBitmap.getWidth(), imageBitmap.getHeight(), blackPaint);
 
         imageBitmap = resultBitmap;
-        imageView.setImageDrawable(new BitmapDrawable(context.getResources(), imageBitmap));
+        Matrix displayMatrix = imageView.getDisplayMatrix();
+        imageView.setImageBitmap(imageBitmap, displayMatrix, -1.0f, -1.0f);
     }
 
     public boolean sendJsonForParsing(@Nullable RequestQueue.RequestFinishedListener<NetworkResponse> listener) {
@@ -341,7 +344,7 @@ public class DrawingFragment extends Fragment {
 
     public void setState(State state) {
         if (state == State.BRUSH) {
-            zoomImageView();
+            //zoomImageView();
             setScaleEnabled(false);
             drawingView.setVisibility(View.VISIBLE);
         } else {

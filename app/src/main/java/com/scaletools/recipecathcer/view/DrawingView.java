@@ -81,7 +81,6 @@ public class DrawingView extends ImageView {
         setImageBitmap(mBitmap);
     }
 
-
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -128,7 +127,7 @@ public class DrawingView extends ImageView {
         float dx = Math.abs(x - mX);
         float dy = Math.abs(y - mY);
         if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
-            mPath.quadTo(mX, mY, (x + mX)/2, (y + mY)/2);
+            mPath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
             mX = x;
             mY = y;
 
@@ -140,7 +139,7 @@ public class DrawingView extends ImageView {
     private void touch_up_drawing() {
         mPath.lineTo(mX, mY);
         circlePath.reset();
-        mCanvas.drawPath(mPath,  mPaint);
+        mCanvas.drawPath(mPath, mPaint);
         // kill this so we don't double draw
         mPath.reset();
     }

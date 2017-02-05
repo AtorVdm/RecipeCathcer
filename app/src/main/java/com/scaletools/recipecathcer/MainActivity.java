@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity
         fabBack = fab(R.id.fabBack);
         fabList = Arrays.asList(fabBrush,
                 fabSelect, fabContinue, fabBack);
-        
+
         if (savedInstanceState == null) {
             showChoosingFragment();
         }
@@ -295,7 +295,7 @@ public class MainActivity extends AppCompatActivity
     //endregion
 
     public void showRequestButtons(boolean success) {
-        int resource = success? R.drawable.ic_check: R.drawable.ic_try_again;
+        int resource = success ? R.drawable.ic_check : R.drawable.ic_try_again;
         fabContinue.setImageResource(resource);
         fabContinue.setTag(resource);
         displayButtons(fabContinue, fabBack);

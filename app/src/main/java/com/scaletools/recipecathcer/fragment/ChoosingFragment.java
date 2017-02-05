@@ -80,8 +80,7 @@ public class ChoosingFragment extends Fragment {
         ImageView button = (ImageView) view.findViewById(R.id.blackView);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v)
-            {
+            public void onClick(View v) {
                 showImageChooser();
             }
         });
@@ -97,37 +96,29 @@ public class ChoosingFragment extends Fragment {
         showImageChooser();
     }
 
-    public void showImageChooser()
-    {
+    public void showImageChooser() {
         List<Intent> intentList = new ArrayList<>();
 
         Intent pickIntent = new Intent(Intent.ACTION_PICK,
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         addIntentsToList(pickIntent, intentList);
 
-        try
-        {
-            if (mImageFile == null)
-            {
+        try {
+            if (mImageFile == null) {
                 mImageFile = createImageFile();
             }
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             Log.e(TAG, "Could not create image file for capture");
         }
 
-        if (mImageFile != null)
-        {
-            if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
-            {
+        if (mImageFile != null) {
+            if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
                 Intent takePhotoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 Uri imageUri = Uri.fromFile(mImageFile);
                 takePhotoIntent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
                 takePhotoIntent.putExtra(android.provider.MediaStore.EXTRA_SCREEN_ORIENTATION, ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
                 addIntentsToList(takePhotoIntent, intentList);
-            }
-            else {
+            } else {
                 if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
                         Manifest.permission.READ_CONTACTS)) {
 
@@ -151,41 +142,32 @@ public class ChoosingFragment extends Fragment {
                 }
             }
 
-            if (!intentList.isEmpty())
-            {
-                if (intentList.size() > 1)
-                {
+            if (!intentList.isEmpty()) {
+                if (intentList.size() > 1) {
                     Intent chooserIntent = Intent.createChooser(intentList.remove(intentList.size() - 1), "Select picture source");
                     chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS,
                             intentList.toArray(new Parcelable[intentList.size()]));
 
                     Log.d(TAG, "Starting image chooser activity");
                     startActivityForResult(chooserIntent, SELECT_PICTURE_REQUEST);
-                }
-                else
-                {
+                } else {
                     Log.d(TAG, "Starting single image intent");
                     startActivityForResult(intentList.get(0), SELECT_PICTURE_REQUEST);
                 }
-            }
-            else
+            } else
                 Log.w(TAG, "No image intents found");
         }
     }
 
-    private void addIntentsToList(Intent intent, List<Intent> intentList)
-    {
+    private void addIntentsToList(Intent intent, List<Intent> intentList) {
         List<ResolveInfo> resInfo = getActivity().getPackageManager().queryIntentActivities(intent, 0);
-        for (ResolveInfo resolveInfo : resInfo)
-        {
+        for (ResolveInfo resolveInfo : resInfo) {
             String packageName = resolveInfo.activityInfo.packageName;
             Intent targetedIntent = new Intent(intent);
             targetedIntent.setPackage(packageName);
             boolean contains = false;
-            for(Intent i : intentList)
-            {
-                if (i.equals(targetedIntent))
-                {
+            for (Intent i : intentList) {
+                if (i.equals(targetedIntent)) {
                     contains = true;
                     break;
                 }
@@ -195,8 +177,7 @@ public class ChoosingFragment extends Fragment {
         }
     }
 
-    private File createImageFile() throws IOException
-    {
+    private File createImageFile() throws IOException {
         // Create an image file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.UK).format(new Date());
         String imageFileName = timeStamp + '_';
@@ -211,66 +192,49 @@ public class ChoosingFragment extends Fragment {
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (resultCode == Activity.RESULT_OK && requestCode == SELECT_PICTURE_REQUEST)
-        {
+        if (resultCode == Activity.RESULT_OK && requestCode == SELECT_PICTURE_REQUEST) {
             Uri uri = null;
-            if (data != null && (data.getAction() == null || !data.getAction().equals(MediaStore.ACTION_IMAGE_CAPTURE)))
-            {
+            if (data != null && (data.getAction() == null || !data.getAction().equals(MediaStore.ACTION_IMAGE_CAPTURE))) {
                 // User picked an existing file
                 uri = data.getData();
             }
 
             final Uri uriCopy = uri;
-            new AsyncTask<Void, Void, Exception>()
-            {
-                protected Exception doInBackground(Void... unused)
-                {
+            new AsyncTask<Void, Void, Exception>() {
+                protected Exception doInBackground(Void... unused) {
                     RuntimeException exception = null;
-                    try
-                    {
+                    try {
                         // Rescale the image if it is larger than 1920 px in any dimension
                         final int maxSize = 1920;
                         Bitmap bitmap;
-                        if (uriCopy == null)
-                        {
+                        if (uriCopy == null) {
                             Log.d(TAG, "Decoding image capture with file " + mImageFile.getPath());
                             bitmap = BitmapFactory.decodeFile(mImageFile.getPath());
                             // We may have to wait a while until the bitmap has finished saving...
-                            for (int retries = 0; bitmap == null && retries != 10; ++retries)
-                            {
-                                try
-                                {
+                            for (int retries = 0; bitmap == null && retries != 10; ++retries) {
+                                try {
                                     Log.d(TAG, "Bitmap is null, sleeping...");
                                     Thread.sleep(200);
-                                }
-                                catch (InterruptedException e)
-                                {
+                                } catch (InterruptedException e) {
                                 }
                                 bitmap = BitmapFactory.decodeFile(mImageFile.getPath());
                             }
-                            if (bitmap == null)
-                            {
+                            if (bitmap == null) {
                                 exception = new RuntimeException("Failed to load the picture from " + mImageFile.getAbsolutePath());
                                 Log.e(TAG, exception.getMessage());
                             }
-                        }
-                        else
-                        {
+                        } else {
                             bitmap = MediaStore.Images.Media.getBitmap(getActivity().getContentResolver(), uriCopy);
-                            if (bitmap == null)
-                            {
+                            if (bitmap == null) {
                                 exception = new RuntimeException("Failed to load the picture from " + uriCopy);
                                 Log.e(TAG, exception.getMessage());
                             }
                         }
-                        if (bitmap != null)
-                        {
+                        if (bitmap != null) {
                             Log.d(TAG, String.format("File 1 length: %d Width: %d Height: %d", mImageFile.length(), bitmap.getWidth(), bitmap.getHeight()));
-                            if (bitmap.getWidth() > maxSize || bitmap.getHeight() > maxSize)
-                            {
+                            if (bitmap.getWidth() > maxSize || bitmap.getHeight() > maxSize) {
                                 float scaleFactor = Math.max(bitmap.getWidth() / (float) maxSize, bitmap.getHeight() / (float) maxSize);
                                 bitmap = Bitmap.createScaledBitmap(bitmap, Math.round(bitmap.getWidth() / scaleFactor), Math.round(bitmap.getHeight() / scaleFactor), true);
                             }
@@ -281,9 +245,7 @@ public class ChoosingFragment extends Fragment {
                             Log.d(TAG, String.format("File 2 length: %d Width: %d Height: %d", mImageFile.length(), bitmap.getWidth(), bitmap.getHeight()));
 
                         }
-                    }
-                    catch(Exception e)
-                    {
+                    } catch (Exception e) {
                         exception = new RuntimeException("Failed to scale the picture from " + mImageFile.getAbsolutePath(), e);
                         Log.e(TAG, exception.getMessage());
                     }
@@ -294,10 +256,8 @@ public class ChoosingFragment extends Fragment {
                     return exception;
                 }
 
-                protected void onPostExecute(Exception exception)
-                {
-                    if (exception != null || mImageFile == null)
-                    {
+                protected void onPostExecute(Exception exception) {
+                    if (exception != null || mImageFile == null) {
                         Toast.makeText(context, exception.getMessage(), Toast.LENGTH_SHORT).show();
                     } else {
                         final BitmapFactory.Options options = new BitmapFactory.Options();

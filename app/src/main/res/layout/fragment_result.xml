@@ -1,8 +1,8 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/fragmentResult"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:id="@+id/fragmentResult"
     tools:context="com.scaletools.recipecathcer.fragment.ResultFragment">
 
     <!-- TODO: Update blank fragment layout -->
@@ -10,7 +10,7 @@
         android:id="@+id/resultText"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment"
-        android:scrollbars="vertical"/>
+        android:scrollbars="vertical"
+        android:text="@string/hello_blank_fragment" />
 
 </FrameLayout>

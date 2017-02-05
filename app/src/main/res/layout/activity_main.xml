@@ -1,36 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.design.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
     tools:context="com.scaletools.recipecathcer.MainActivity">
-<!--
-    <android.support.design.widget.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:theme="@style/AppTheme.AppBarOverlay">
 
-        <android.support.v7.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="?attr/colorPrimaryDark"
-            app:popupTheme="@style/AppTheme.PopupOverlay" />
-
-    </android.support.design.widget.AppBarLayout>
--->
-    <!--<include layout="@layout/content_main" />-->
     <FrameLayout
         android:id="@+id/activityFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true" >
-    </FrameLayout>
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentStart="true"></FrameLayout>
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fabBrush"
@@ -38,8 +21,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top|right"
         android:layout_margin="@dimen/fab_margin"
-        android:src="@drawable/ic_brush"
         android:onClick="clickImageBrush"
+        android:src="@drawable/ic_brush"
         android:visibility="invisible" />
 
     <android.support.design.widget.FloatingActionButton
@@ -48,8 +31,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top|left"
         android:layout_margin="@dimen/fab_margin"
-        android:src="@drawable/ic_select_area"
         android:onClick="clickImageSelect"
+        android:src="@drawable/ic_select_area"
         android:visibility="invisible" />
 
     <android.support.design.widget.FloatingActionButton
@@ -58,8 +41,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|right"
         android:layout_margin="@dimen/fab_margin"
-        android:src="@drawable/ic_check"
         android:onClick="clickImageContinue"
+        android:src="@drawable/ic_check"
         android:visibility="invisible" />
 
     <android.support.design.widget.FloatingActionButton
@@ -68,8 +51,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|left"
         android:layout_margin="@dimen/fab_margin"
-        android:src="@drawable/ic_cross"
         android:onClick="clickImageBack"
+        android:src="@drawable/ic_cross"
         android:visibility="invisible" />
 
 </android.support.design.widget.CoordinatorLayout>

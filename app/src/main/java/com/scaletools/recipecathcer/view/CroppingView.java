@@ -100,7 +100,7 @@ public class CroppingView extends ImageView {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        mBackgroundCanvas.drawPath(mPath,  mPaint);
+        mBackgroundCanvas.drawPath(mPath, mPaint);
         canvas.drawBitmap(mBackgroundBitmap, 0, 0, null);
         canvas.drawPath(circlePath, circlePaint);
     }
@@ -147,7 +147,7 @@ public class CroppingView extends ImageView {
         float dx = Math.abs(x - mX);
         float dy = Math.abs(y - mY);
         if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
-            mPath.quadTo(mX, mY, (x + mX)/2, (y + mY)/2);
+            mPath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2);
             mX = x;
             mY = y;
 

@@ -66,14 +66,12 @@ public class DrawingUtils {
     }
 
     public static Bitmap replaceColorIn(Bitmap bitmap, int from, int to) {
-        int [] allPixels = new int [bitmap.getHeight() * bitmap.getWidth()];
+        int[] allPixels = new int[bitmap.getHeight() * bitmap.getWidth()];
 
         bitmap.getPixels(allPixels, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
 
-        for(int i = 0; i < allPixels.length; i++)
-        {
-            if(allPixels[i] == from)
-            {
+        for (int i = 0; i < allPixels.length; i++) {
+            if (allPixels[i] == from) {
                 allPixels[i] = to;
             }
         }

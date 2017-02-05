@@ -54,7 +54,8 @@ public class RequestProcessor implements Parcelable {
     //endregion
 
 
-    public RequestProcessor() { }
+    public RequestProcessor() {
+    }
 
 
     //region Send
@@ -64,16 +65,16 @@ public class RequestProcessor implements Parcelable {
 
         final VolleyMultipartRequest multipartRequest = new VolleyMultipartRequest
                 (Request.Method.POST, url + OCR, new Response.Listener<NetworkResponse>() {
-            @Override
-            public void onResponse(NetworkResponse response) {
-                processResponse(new String(response.data));
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                handleErrorResponse(error);
-            }
-        }) {
+                    @Override
+                    public void onResponse(NetworkResponse response) {
+                        processResponse(new String(response.data));
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        handleErrorResponse(error);
+                    }
+                }) {
             @Override
             protected Map<String, DataPart> getByteData() {
                 Map<String, DataPart> params = new HashMap<>();
@@ -100,22 +101,22 @@ public class RequestProcessor implements Parcelable {
 
         final StringRequest stringRequest = new StringRequest
                 (Request.Method.POST, url + PARSE, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-                try {
-                    // Fixing response problem with Task<string> response
-                    response = response.substring(1, response.length() - 1).replace("\\\"", "\"");
-                    jsonRecipe = new JSONObject(response);
-                } catch (JSONException e) {
-                    Log.e(TAG, "JSON PARSING ERROR: " + e.getMessage());
-                }
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                handleErrorResponse(error);
-            }
-        }) {
+                    @Override
+                    public void onResponse(String response) {
+                        try {
+                            // Fixing response problem with Task<string> response
+                            response = response.substring(1, response.length() - 1).replace("\\\"", "\"");
+                            jsonRecipe = new JSONObject(response);
+                        } catch (JSONException e) {
+                            Log.e(TAG, "JSON PARSING ERROR: " + e.getMessage());
+                        }
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        handleErrorResponse(error);
+                    }
+                }) {
             @Override
             public String getBodyContentType() {
                 return "application/json; charset=ISO-8859-1";
@@ -167,11 +168,11 @@ public class RequestProcessor implements Parcelable {
                 if (networkResponse.statusCode == 404) {
                     errorMessage = "Resource not found";
                 } else if (networkResponse.statusCode == 401) {
-                    errorMessage = message+" Please login again";
+                    errorMessage = message + " Please login again";
                 } else if (networkResponse.statusCode == 400) {
-                    errorMessage = message+ " Check your inputs";
+                    errorMessage = message + " Check your inputs";
                 } else if (networkResponse.statusCode == 500) {
-                    errorMessage = message+" Something is getting wrong";
+                    errorMessage = message + " Something is getting wrong";
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
